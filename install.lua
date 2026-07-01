@@ -160,13 +160,15 @@ end
 
 local function create_startup_file(chosen_script)
 	local file = assert(fs.open("/startup.lua", "w"))
+	file.write('shell.run("bg")') -- open a shell for the user
 	file.write('require("scripts/' .. chosen_script .. '")')
 	file.close()
 end
 
 --- Main installer entry point.
 ---
---- Prompts the user for a script choice, installs it, then executes it.
+--- Prompts the user for a script choice, installs it,
+--- sets it as the startup script then executes it.
 local chosen_script = prompt_choice("What script do you wish to install?\nAvailable scripts:", available_scripts)
 download_chosen_script(chosen_script)
 create_startup_file(chosen_script)

@@ -13,20 +13,81 @@ function Locate()
 	return string.format("%d %d %d", x, y, z)
 end
 
---- Get the first wireless modem connected to the computer
----@return peripheral
-function Get_Wireless_Modem()
-	return peripheral.find("modem", function(name, modem)
-		return modem.isWireless()
-	end)
+--- Prompts the user to select one option from a list.
+---
+--- Supports ComputerCraft's built-in tab completion and repeats until a
+--- valid choice is entered.
+---
+---@param prompt string Text displayed before reading input.
+---@param choices table<string, any> Available choices mapped to any value.
+---@param show_choices? boolean Whether to print the list of choices. Defaults to true.
+---@return string choice The selected choice name.
+function Prompt_Choice(prompt, choices, show_choices)
+	if show_choices == nil then
+		show_choices = true
+	end
+
+	local names = {}
+
+	for name in pairs(choices) do
+		table.insert(names, name)
+	end
+
+	table.sort(names)
+
+	while true do
+		print(prompt)
+
+		if show_choices then
+			for _, name in ipairs(names) do
+				print("-", name)
+			end
+		end
+
+		write("> ")
+
+		local choice = read(nil, nil, function(partial)
+			return require("cc.completion").choice(partial, names)
+		end)
+
+		if choices[choice] ~= nil then
+			return choice
+		end
+
+		printError(("Invalid choice: %s."):format(tostring(choice)))
+	end
 end
 
---- Get the first wired modem connected to the computer
----@return peripheral
-function Get_Wired_Modem()
-	return peripheral.find("modem", function(name, modem)
-		return not modem.isWireless()
-	end)
+--- Waits until a peripheral matching the given predicate is available.
+---
+--- Repeatedly calls `find_func` until it returns a peripheral. If a name is
+--- provided, a waiting message is displayed while no matching peripheral is
+--- found.
+---
+---@generic T
+---@param find_func fun(): T? Function returning the desired peripheral, or nil if unavailable.
+---@param name? string Human-readable peripheral name to display while waiting. If omitted, no status is displayed.
+---@return T peripheral The matching peripheral.
+function Wait_For_Peripheral(find_func, name)
+	while true do
+		local peripheral = find_func()
+
+		if peripheral then
+			return peripheral
+		end
+
+		if name then
+			term.clear()
+			term.setCursorPos(1, 1)
+
+			print(("No %s detected."):format(name))
+			print(("Please connect a %s."):format(name))
+			print()
+			print("Waiting...")
+		end
+
+		os.pullEvent("peripheral")
+	end
 end
 
 --- Waits for a message on the given channel and returns it

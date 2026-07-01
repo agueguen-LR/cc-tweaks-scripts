@@ -1,4 +1,4 @@
-require("scripts/utils")
+require("lib.utils")
 
 local name = "DigitalMinerTurtle"
 local wireless = get_wireless()

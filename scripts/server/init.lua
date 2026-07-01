@@ -1,4 +1,4 @@
-require("scripts/utils")
+require("lib.utils")
 
 local wireless = get_wireless()
 local monitor = peripheral.find("monitor")

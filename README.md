@@ -1,4 +1,6 @@
-# Scripts for CC: Tweaks
+# CraftKit
+
+Extensions and additions on the base CraftOS shell, to provide a more user-friendly experience and higher level commands for interacting with ingame devices.
 
 Tested with versions:
  - Minecraft 1.21.1
@@ -17,8 +19,6 @@ Get the installer and run it:
 wget https://raw.githubusercontent.com/agueguen-LR/cc-tweaks-scripts/main/install.lua
 install
 ```
-
-Follow the instructions to setup the script you want on the Computer.
 
 > [!WARNING]
 > The installer expects to be called within the root directory, on a blank computer (only rom/ folder).

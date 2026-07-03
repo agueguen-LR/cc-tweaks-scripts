@@ -2,19 +2,12 @@
 ---@author agueguen-LR
 ---@license MIT
 
---- ComputerCraft Tweaks scripts installer.
+--- CraftKit installer.
 ---
---- This module provides an interactive installer for my CC Tweaks scripts
---- collection. It allows the user to choose a script to install, downloads
---- the required dependencies from GitHub, and launches the selected script.
+--- This module provides an installer for CraftKit, my extensions and additions for base CraftOS from CC: Tweaked.
 ---
---- The installer:
---- - Ensures it is executed from the root directory.
---- - Downloads shared libraries.
---- - Downloads the selected script.
---- - Handles download failures with retry/restart/abort options.
 ---
----@see https://github.com/agueguen-LR/cc-tweaks-scripts
+---@see https://github.com/agueguen-LR/CraftKit
 
 if shell.dir() ~= "" then
 	printError("WARNING: Install script has not been called in the root directory; unexpected errors could arise.")
@@ -24,15 +17,17 @@ local completion_choice = require("cc.completion").choice
 
 --- Base URL used to retrieve files from the GitHub repository.
 ---@type string
-local github_link_prefix = "https://raw.githubusercontent.com/agueguen-LR/cc-tweaks-scripts/main/"
+local github_link_prefix = "https://raw.githubusercontent.com/agueguen-LR/CraftKit/main/"
+--- Install path prefix
+---@type string
+local install_path_prefix = "/CraftKit/"
 
---- List of scripts available for installation.
----
---- Keys correspond to script folder names inside the repository.
----@type table<string, boolean>
+--- List of scripts to install.
+---@type table<string>
 local available_scripts = {
-	server = true,
-	moving_digital_miner = true,
+	"startup",
+	"sbin/craftd",
+	"lib/fs",
 }
 
 --- Prompts the user to select one option from a list.
@@ -41,7 +36,7 @@ local available_scripts = {
 ---
 ---@param prompt string Text displayed before the choices.
 ---@param choices table<string, any> Available choices mapped to their values.
----@return string choice The selected choice name.
+---@return string choice The selected choice.
 local function prompt_choice(prompt, choices)
 	local names = {}
 
@@ -108,6 +103,7 @@ end
 ---@param path string Local filesystem path to save the file.
 ---@return boolean success Whether the file was successfully downloaded.
 local function download(url, path)
+	print("Downloading " .. url .. " to " .. path .. "...")
 	if fs.exists(path) then
 		return true
 	end
@@ -125,51 +121,28 @@ local function download(url, path)
 	return true
 end
 
---- Installs a selected script and its dependencies.
----
---- Creates the required directories, downloads shared libraries, downloads
---- the selected script, and retries on failure if requested.
----
----@param chosen_script string Name of the script to install.
----@return any result Result from the launched script.
-local function download_chosen_script(chosen_script)
-	-- download library utils first
-	fs.makeDir("/lib")
-
-	if not download(github_link_prefix .. "lib/utils.lua", "/lib/utils.lua") then
-		return handle_error("Failed to download lib/utils.lua.", {
-			func = download_chosen_script,
-			args = { chosen_script },
-		})
-	end
-
-	fs.makeDir("/scripts/" .. chosen_script)
-
-	if
-		not download(
-			github_link_prefix .. "scripts/" .. chosen_script .. "/init.lua",
-			"/scripts/" .. chosen_script .. "/init.lua"
-		)
-	then
-		return handle_error("Failed to download " .. chosen_script .. "/init.lua.", {
-			func = download_chosen_script,
-			args = { chosen_script },
-		})
-	end
-end
-
-local function create_startup_file(chosen_script)
-	local file = assert(fs.open("/startup.lua", "w"))
-	file.write('shell.run("bg")') -- open a shell for the user
-	file.write('require("scripts/' .. chosen_script .. '")')
-	file.close()
-end
-
 --- Main installer entry point.
----
---- Prompts the user for a script choice, installs it,
---- sets it as the startup script then executes it.
-local chosen_script = prompt_choice("What script do you wish to install?\nAvailable scripts:", available_scripts)
-download_chosen_script(chosen_script)
-create_startup_file(chosen_script)
-shell.run("startup")
+for _, script in pairs(available_scripts) do
+	local link = github_link_prefix .. script .. ".lua"
+	local path = install_path_prefix .. script .. ".lua"
+	if not download(link, path) then
+		handle_error("Failed to download " .. script, {
+			func = download,
+			args = { link, path },
+		})
+	end
+end
+
+settings.define("craftkit.path", {
+	description = "Path to CraftKit installation",
+	type = "string",
+	default = "/CraftKit",
+})
+settings.set("craftkit.path", install_path_prefix)
+settings.save()
+
+local file = assert(fs.open("/startup.lua", "w"))
+file.write('require(settings.get("craftkit.path") .. "/startup")')
+file.close()
+
+shell.run(install_path_prefix .. "startup")

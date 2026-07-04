@@ -26,8 +26,9 @@ local install_path_prefix = "/CraftKit/"
 ---@type table<string>
 local available_scripts = {
 	"startup",
+	"bin/services",
 	"sbin/craftd",
-	"lib/fs",
+	"lib/fsutil",
 }
 
 --- Prompts the user to select one option from a list.
